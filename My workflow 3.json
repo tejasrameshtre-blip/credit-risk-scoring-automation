@@ -1,0 +1,324 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Borrower application form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name "
+            },
+            {
+              "fieldLabel": "Annual Income £ ",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Loan Amount Requested £ ",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Savings / Assets £ ",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Collateral Offered? ",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "YES"
+                  },
+                  {
+                    "option": "NO"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Loan Purpose ",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Business"
+                  },
+                  {
+                    "option": "Personal"
+                  },
+                  {
+                    "option": "Education"
+                  },
+                  {
+                    "option": "other"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Previous Defaults?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "YES"
+                  },
+                  {
+                    "option": "NO"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6f8dd5ab-4d80-44b5-b4dd-537dda458e7e",
+      "name": "On form submission",
+      "webhookId": "2bb333fe-3661-4c56-ad65-60e4f239ba73"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\n// Debug — log all keys to find exact names\nconst keys = Object.keys(data);\n\nlet score = 0;\n\nconst income = Number(Object.entries(data).find(([k]) => k.includes('Annual Income'))?.[1] || 0);\nconst loan = Number(Object.entries(data).find(([k]) => k.includes('Loan Amount'))?.[1] || 0);\nconst savings = Number(Object.entries(data).find(([k]) => k.includes('Savings'))?.[1] || 0);\nconst collateral = (Object.entries(data).find(([k]) => k.includes('Collateral'))?.[1] || '').toString().toUpperCase();\nconst purpose = (Object.entries(data).find(([k]) => k.includes('Loan Purpose'))?.[1] || '').toString().trim();\nconst defaults = (Object.entries(data).find(([k]) => k.includes('Previous Defaults'))?.[1] || '').toString().toUpperCase();\nconst name = (Object.entries(data).find(([k]) => k.includes('Full Name'))?.[1] || '').toString().trim();\n\n// C1 — Capacity\nconst lti = loan / income;\nif (lti < 0.3) score += 30;\nelse if (lti < 0.5) score += 20;\nelse score += 5;\n\n// C2 — Capital\nconst capitalRatio = savings / loan;\nif (capitalRatio > 0.5) score += 25;\nelse if (capitalRatio > 0.2) score += 15;\nelse score += 5;\n\n// C3 — Collateral\nif (collateral === 'NO') score += 5;\nelse score += 20;\n\n// C4 — Conditions\nif (purpose === 'Business') score += 15;\nelse if (purpose === 'Education') score += 12;\nelse score += 8;\n\n// C5 — Character\nif (defaults === 'YES') score -= 10;\nelse score += 10;\n\n// Risk rating\nlet rating;\nif (score >= 75) rating = 'LOW';\nelse if (score >= 45) rating = 'MEDIUM';\nelse rating = 'HIGH';\n\nreturn [{ json: {\n  name: name,\n  income: income,\n  loanAmount: loan,\n  score: score,\n  riskRating: rating,\n  timestamp: new Date().toISOString(),\n  debug_keys: keys.join(' | ')\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f7cd4f6a-58b4-41de-a0db-54732db69dab",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1RfZaCYgKiB0KHQdbb6C-4t2NdxEBiXxrKr5hE8R91Xg",
+          "mode": "list",
+          "cachedResultName": "Credit Risk Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1RfZaCYgKiB0KHQdbb6C-4t2NdxEBiXxrKr5hE8R91Xg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Credit Risk Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1RfZaCYgKiB0KHQdbb6C-4t2NdxEBiXxrKr5hE8R91Xg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp }}",
+            "Name": "={{ $('On form submission').item.json['Full Name '] }}",
+            "Income": "={{ $('On form submission').item.json['Annual Income £ '] }}",
+            "Loan Amt": "={{ $('On form submission').item.json['Loan Amount Requested £ '] }}",
+            "Score": "={{ $json.score }}",
+            "Risk Rating": "={{ $json.riskRating }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Income",
+              "displayName": "Income",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Loan Amt",
+              "displayName": "Loan Amt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Risk Rating",
+              "displayName": "Risk Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "878ff0ad-7962-46d9-89ba-e3aab66be2c7",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dgvZlgj2ev5wzPXu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cc7be897-da5f-428e-b85f-8a7a5b5d50d4",
+              "leftValue": "={{ $('Code in JavaScript').item.json.riskRating }}",
+              "rightValue": "HIGH",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b90eab60-4670-4686-a89e-76c84d6b9d37",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "tejasramesh.tre@gmail.com",
+        "subject": "=⚠️ HIGH Risk Borrower Alert — {{ $('Code in JavaScript').item.json.name }}",
+        "message": "=Dear Credit Risk Team,  A new borrower application has been flagged as HIGH RISK and requires immediate review.  ───────────────────────────── BORROWER DETAILS ───────────────────────────── Name           : {{ $('Code in JavaScript').item.json.name }} Annual Income  : £{{ $('Code in JavaScript').item.json.income }} Loan Amount    : £{{ $('Code in JavaScript').item.json.loanAmount }} Risk Score     : {{ $('Code in JavaScript').item.json.score }} / 100 Risk Rating    : {{ $('Code in JavaScript').item.json.riskRating }} Submitted At   : {{ $('Code in JavaScript').item.json.timestamp }} ─────────────────────────────  ACTION REQUIRED: This application has failed the automated credit policy threshold. Please conduct a manual credit review before proceeding.  This is an automated alert generated by the Credit Exception Monitoring System.  Regards, Credit Risk Automation System",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "b1fe5f54-1a2f-455e-94b2-48dbc97e99b2",
+      "name": "Send a message",
+      "webhookId": "a9d7a9bb-b052-4cb0-84cb-e66b1d49f725",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0MaJU7EiIuPYeUGL",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 60,
+    "availableInMCP": false
+  },
+  "versionId": "44f84841-b743-4cf2-b171-07cb1aee485e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a3c909753b8c9484483570c36a95b7d3316339551c0f747500c986c080db7740"
+  },
+  "id": "4wiFsvlFzsX0rTMt",
+  "tags": []
+}
