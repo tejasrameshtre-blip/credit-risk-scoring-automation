@@ -29,4 +29,4 @@ Automated borrower credit risk scoring system built in n8n.
 - Gmail (HIGH risk alerts)
 
 ## Dashboard Output
-![Credit Risk Dashboard](dashboard.png)
+![Credit Risk Dashboard](image.png)
