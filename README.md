@@ -27,5 +27,6 @@ Automated borrower credit risk scoring system built in n8n.
 - n8n (workflow automation)
 - Google Sheets (portfolio dashboard)
 - Gmail (HIGH risk alerts)
-
+## Dashboard Output
+![Credit Risk Dashboard](image.png)
 
